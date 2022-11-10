@@ -9,23 +9,25 @@ class EscapeRoom : public olc::PixelGameEngine {
         
         std::string sLevel =
             "################"
-            "#..............#"
-            "#.+.........+..#"
-            "#..............#"
-            "#....P.........#"
-            "#..............#"
-            "#..............#"
-            "#..............#"
-            "#..............#"
-            "#...++....#....#"
-            "#.........#....#"
-            "#..............#"
-            "#..............#"
-            "#..............#"
+            "################"
+            "################"
+            "################"
+            "################"
+            "################"
+            "################"
+            "################"
+            "################"
+            "################"
+            "################"
+            "################"
+            "################"
+            "################"
             "################";
     
     olc::vf2d vLevelSize = {16, 15};
-    olc::vf2d vBlockSize = {16, 15};
+    olc::vf2d vBlockSize = {100, 100};
+    
+    olc::Renderable gfxTiles;
     
     struct block
     {
@@ -34,45 +36,36 @@ class EscapeRoom : public olc::PixelGameEngine {
             
         }
         
-        virtual void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, const olc::vi2d& size)
+        virtual void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, const olc::vi2d& size, const olc::Renderable& skin)
         {
             
         }
         
-        virtual bool Push(const int from)
+    };
+    
+    struct wall_tiles : public block
+    {
+        void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, const olc::vi2d& size, const olc::Renderable& skin) override
         {
-            return true;
+            pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(0, 0) * size, size);
         }
-        
-        virtual void Move(const int to)
+    };
+    
+    struct player : public block
+    {
+        void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, const olc::vi2d& size, const olc::Renderable& skin) override
         {
+            pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(0, 0) * size, size);
+        }
+    };
+    
+    struct barrel : public block
+    {
+        void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, const olc::vi2d& size, const olc::Renderable& skin) override
+        {
+            pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(0, 0) * size, size);
+        }
 
-        }
-        
-    };
-    
-    struct block_solid : public block
-    {
-        void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, const olc::vi2d& size) override
-        {
-            pge->FillRect(pos * size, size, olc::BLUE);
-        }
-    };
-    
-    struct block_player : public block
-    {
-        void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, const olc::vi2d& size) override
-        {
-            pge->FillRect(pos * size, size, olc::WHITE);
-        }
-    };
-    
-    struct block_simple : public block
-    {
-        void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, const olc::vi2d& size) override
-        {
-            pge->FillRect(pos * size, size, olc::RED);
-        }
     };
 
 
@@ -91,13 +84,13 @@ class EscapeRoom : public olc::PixelGameEngine {
                     switch(sLevel[(y * vLevelSize.x) + x ])
                     {
                         case '#':
-                            vLevel.emplace_back(std::make_unique<block_solid>());
+                            vLevel.emplace_back(std::make_unique<wall_tiles>());
                             break;
                         case 'P':
-                            vLevel.emplace_back(std::make_unique<block_player>());
+                            vLevel.emplace_back(std::make_unique<player>());
                             break;
                         case '+':
-                            vLevel.emplace_back(std::make_unique<block_simple>());
+                            vLevel.emplace_back(std::make_unique<barrel>());
                             break;
                         default:
                             vLevel.emplace_back(nullptr);
@@ -106,12 +99,15 @@ class EscapeRoom : public olc::PixelGameEngine {
             }
         }
     
-        bool OnUserCreate() override {
+        bool OnUserCreate() override
+        {
+            gfxTiles.Load("wall.png");
             LoadLevel(0);
             return true;
         }
 
-        bool OnUserUpdate(float fElapsedTime) override {
+        bool OnUserUpdate(float fElapsedTime) override
+        {
             Clear(olc::BLACK);
             
             auto id = [&](olc::vi2d& pos) { return (pos.y * vLevelSize.x) + pos.x; };
@@ -125,7 +121,7 @@ class EscapeRoom : public olc::PixelGameEngine {
                     
                     if(b)
                     {
-                        b->DrawSelf(this, vTilePos, vBlockSize);
+                        b->DrawSelf(this, vTilePos, vBlockSize, gfxTiles);
                     }
                 }
             }
@@ -136,7 +132,7 @@ class EscapeRoom : public olc::PixelGameEngine {
 
 int main(int argc, char const *argv[]) {
 	EscapeRoom demo;
-	if (demo.Construct(256, 240, 4, 4))
+	if (demo.Construct(1280, 848, 1, 1))
 		demo.Start();
 
 	return 0;
