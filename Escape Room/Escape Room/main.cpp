@@ -168,6 +168,7 @@ public:
                 frame = 1;
             //std::cout<<personPng<<std::endl;
         }
+        
         frame_count_idle++;
         vPlayerPos.x = vPlayerPos.x + vPlayerVel.x * fElapsedTime;
         vPlayerPos.y = vPlayerPos.y + vPlayerVel.y * fElapsedTime;
