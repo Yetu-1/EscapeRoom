@@ -11,13 +11,13 @@
 
 struct PLAYER
 {
-    float x = 0;
-    float y = 0;
+    float x = 0.0f;
+    float y = 0.0f;
     int width = 8;
     int height = 8;
     
-    float velocity_x = 0.0;
-    float velocity_y = 0.0;
+    float velocity_x = 0.0f;
+    float velocity_y = 0.0f;
     bool jumping = true;
 };
 
@@ -30,7 +30,7 @@ public:
 
 public:
     
-    float gravity = 70.0f;
+    float gravity = 30.0f;
     float friction = 0.9;
     
     int levelHeight = LEVEL_HEIGHT;
@@ -90,19 +90,24 @@ public:
             {
                 player.velocity_x = 50.0f;
             }
-            if(GetKey(olc::Key::SPACE).bHeld)
+            if(GetKey(olc::Key::SPACE).bPressed)
             {
                 // jump
-                player.velocity_y = -300.0f;
+               if(player.velocity_y == 0)
+               {
+                    std::cout<<"hello"<<std::endl;
+                    player.velocity_y -= 17.0f * 100;
+               }
             }
             
         }
+
         // Add gravity and friction
-        player.velocity_y += gravity * elapsedTime;
+        player.velocity_y += gravity;
         
-        player.velocity_x *= friction;
-        player.velocity_y *= friction;
-        
+//        player.velocity_x *= friction;
+//        player.velocity_y *= friction;
+
         // update player position based on change in velocity
         player.x += player.velocity_x * elapsedTime;
         player.y += player.velocity_y * elapsedTime;
