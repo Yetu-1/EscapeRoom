@@ -6,202 +6,118 @@
 #define PIECE_WIDTH 60
 #define PIECE_HEIGHT 60
 
+#define LEVEL_HEIGHT 100
+#define LEVEL_WIDTH 200
+
+struct PLAYER
+{
+    float x = 0;
+    float y = 0;
+    int width = 8;
+    int height = 8;
+    
+    float velocity_x = 0.0;
+    float velocity_y = 0.0;
+    bool jumping = true;
+};
+
 class EscapeRoom : public olc::PixelGameEngine
 {
     
 public:
-    EscapeRoom() {
-        sAppName = "EscapeRoom";
-    }
-    std::string sLevel =
-        "............."
-        "............."
-        "............."
-        "............."
-        "............."
-        "............."
-        "..........P.."
-        ".............";
-    
-    std::string personPng = "01A.png";
-    std::string personIdlePng = "01.png";
-    
-    olc::vf2d vLevelSize = {13, 9};
-    olc::vf2d vBlockSize = {100, 100};
-    olc::vf2d vPlayerSize = {2, 2};
-    
-    olc::vf2d vPlayerPos = {0, 0};
-    olc::vf2d vPlayerVel = {0, 0};
-    
-    olc::Renderable wall;
-    olc::Renderable wall2;
-
-    olc::Sprite* person = nullptr;
-    olc::Decal* person_dec = nullptr;
-    
-    uint8_t frame = 0;
-    uint8_t frame_count = 0;
-    uint8_t frame_count_idle;
+ 
     
 
 public:
+    
+    float gravity = 70.0f;
+    float friction = 0.9;
+    
+    int levelHeight = LEVEL_HEIGHT;
+    int levelWidth  = LEVEL_WIDTH;
+    
+    PLAYER player;
 
-    void DrawBackground()
-    {
-        for(int y = 0; y < vLevelSize.y; y++)
-        {
-            for(int x = 0; x < vLevelSize.x; x++)
-            {
-                if( y >= 7)
-                    DrawSprite(olc::vi2d({x, y}) * vBlockSize, wall2.Sprite());
-                else
-                    DrawSprite(olc::vi2d({x, y}) * vBlockSize, wall.Sprite());
-            }
-        }
-    }
-
+    
     bool OnUserCreate() override
     {
-        wall.Load("wall.png");
-        wall2.Load("wall2.png");
-            
-            
-        person = new olc::Sprite("01.png");
-        person_dec = new olc::Decal(person);
-        
         return true;
     }
 
     bool OnUserUpdate(float fElapsedTime) override
     {
-        auto GetTile = [&](int x, int y)
-        {
-            if(x >= 0 && x < vLevelSize.x && y >= 0 && y < vLevelSize.y)
-                return sLevel[y * vLevelSize.x + x];
-            else
-                return ' ';
-        };
+        Clear(olc::VERY_DARK_GREY);
+        updatePlayer(fElapsedTime);
+        return true;
+    }
+    
+    void boundaryCollisionDetection()
+    {
+        // x axis boundary collision
+        if(player.x < 0)
+            player.x = 0;
+        else if ( player.x + player.width > LEVEL_WIDTH)
+            player.x = LEVEL_WIDTH - player.width;
         
-        auto SetTile = [&](int x, int y, char c)
-        {
-            if(x >= 0 && x < vLevelSize.x && y >= 0 && y < vLevelSize.y)
-                sLevel[y * vLevelSize.x + x] = c;
-        };
+        // y axis boundary collision
+        if(player.y < 0)
+            player.y = 0;
+        else if ( player.y + player.height > LEVEL_HEIGHT)
+            player.y = LEVEL_HEIGHT - player.height;
+    }
+    
+    void updatePlayer(float elapsedTime)
+    {
+        // set velocity to zero if there is no movement
+        player.velocity_x = 0;
+        player.velocity_y = 0;
         
-        vPlayerVel = {0, 0};
-        
-        // Handle input
         if(IsFocused())
         {
             if(GetKey(olc::Key::UP).bHeld)
             {
-                vPlayerVel.y = -6.0f;
+                player.velocity_y = -50.0f;
             }
             if(GetKey(olc::Key::DOWN).bHeld)
             {
-                vPlayerVel.y = 6.0f;
+                player.velocity_y = 50.0f;
             }
             if(GetKey(olc::Key::LEFT).bHeld)
             {
-                if ( frame > 0 && frame < 10)
-                {
-                    personPng[0] = char(int(frame/10) + 48);
-                    personPng[1] = char(frame + 48);
-                }
-                else{
-                    personPng[0] = char(int(frame/10) + 48);
-                    personPng[1] = char(int(frame-10) + 48);
-                }
-                person = new olc::Sprite(personPng);
-                person_dec = new olc::Decal(person);
-                vPlayerVel.x = -2.0f;
-                if(!(frame_count % 4))
-                    frame = (++frame) % 14;
-                if(frame == 0)
-                    frame = 1;
-                frame_count++;
+                player.velocity_x = -50.0f;
             }
             if(GetKey(olc::Key::RIGHT).bHeld)
             {
-                if ( frame > 0 && frame < 10)
-                {
-                    personPng[0] = char(int(frame/10) + 48);
-                    personPng[1] = char(frame + 48);
-                }
-                else{
-                    personPng[0] = char(int(frame/10) + 48);
-                    personPng[1] = char(int(frame-10) + 48);
-                }
-                person = new olc::Sprite(personPng);
-                person_dec = new olc::Decal(person);
-                vPlayerVel.x = 2.0f;
-                if(!(frame_count % 4))
-                    frame = (++frame) % 14;
-                if(frame == 0)
-                    frame = 1;
-                frame_count++;
+                player.velocity_x = 50.0f;
             }
-            
-        }
-        
-        if(!(frame_count_idle % 5) && !(GetKey(olc::Key::RIGHT).bHeld) && !(GetKey(olc::Key::LEFT).bHeld) )
-        {
-            if ( frame > 0 && frame < 10)
+            if(GetKey(olc::Key::SPACE).bHeld)
             {
-                personIdlePng[0] = char(int(frame/10) + 48);
-                personIdlePng[1] = char(frame + 48);
-            }
-            else if(frame >= 10 && frame < 20){
-                personIdlePng[0] = char(int(frame/10) + 48);
-                personIdlePng[1] = char(int(frame-10) + 48);
-            }
-            else{
-                personIdlePng[0] = char(int(frame/10) + 48);
-                personIdlePng[1] = char(int(frame-20) + 48);
+                // jump
+                player.velocity_y = -300.0f;
             }
             
-            person = new olc::Sprite(personIdlePng);
-            person_dec = new olc::Decal(person);
-            
-            frame = (++frame) % 26;
-            if(frame == 0)
-                frame = 1;
-            //std::cout<<personPng<<std::endl;
         }
+        // Add gravity and friction
+        player.velocity_y += gravity * elapsedTime;
         
-        frame_count_idle++;
-        vPlayerPos.x = vPlayerPos.x + vPlayerVel.x * fElapsedTime;
-        vPlayerPos.y = vPlayerPos.y + vPlayerVel.y * fElapsedTime;
+        player.velocity_x *= friction;
+        player.velocity_y *= friction;
         
-        Clear(olc::BLACK);
-        DrawBackground();
-
+        // update player position based on change in velocity
+        player.x += player.velocity_x * elapsedTime;
+        player.y += player.velocity_y * elapsedTime;
         
-        //Draw Tiles
-        for(int x = 0; x < vLevelSize.x; x++)
-        {
-            for(int  y = 0; y < vLevelSize.y; y++)
-            {
-                char sTileType = GetTile(x, y);
-                switch(sTileType)
-                {
-                    case 'P':
-                        DrawDecal(olc::vf2d{vPlayerPos.x, vPlayerPos.y} * vBlockSize, person_dec,vPlayerSize);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
+        boundaryCollisionDetection();
         
-        return true;
+        FillRect(player.x, player.y, player.width, player.height, olc::GREEN);
     }
+    
 };
 
 
 int main(int argc, char const *argv[]) {
     EscapeRoom demo;
-    if (demo.Construct(1280, 848, 1, 1))
+    if (demo.Construct(LEVEL_WIDTH, LEVEL_HEIGHT, 8, 8))
         demo.Start();
 
     return 0;
