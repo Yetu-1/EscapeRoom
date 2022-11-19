@@ -6,15 +6,15 @@
 #define PIECE_WIDTH 60
 #define PIECE_HEIGHT 60
 
-#define LEVEL_HEIGHT 100
-#define LEVEL_WIDTH 200
+#define LEVEL_HEIGHT 848
+#define LEVEL_WIDTH 1280
 
 struct PLAYER
 {
     float x = 0.0f;
     float y = 0.0f;
-    int width = 8;
-    int height = 8;
+    float width = 2;
+    float height = 2;
     
     float velocity_x = 0.0f;
     float velocity_y = 0.0f;
@@ -30,17 +30,31 @@ public:
 
 public:
     
-    float gravity = 30.0f;
+    float gravity = 1.0f;
     float friction = 0.9;
     
     int levelHeight = LEVEL_HEIGHT;
     int levelWidth  = LEVEL_WIDTH;
     
     PLAYER player;
-
+    
+    std::string personPng = "01A.png";
+    std::string personIdlePng = "01.png";
+    
+    olc::Sprite* person = nullptr;
+    olc::Decal* person_dec = nullptr;
+    
+    uint8_t frame = 0;
+    uint8_t frame_count = 0;
+    uint8_t frame_count_idle;
+    
+    olc::vf2d vBlockSize = {1, 1};
+    olc::vf2d vPlayerSize = {2, 2};
     
     bool OnUserCreate() override
     {
+        person = new olc::Sprite(personPng);
+        person_dec = new olc::Decal(person);
         return true;
     }
 
@@ -63,58 +77,76 @@ public:
         if(player.y < 0)
             player.y = 0;
         else if ( player.y + player.height > LEVEL_HEIGHT)
+        {
+            player.velocity_y = 0;
             player.y = LEVEL_HEIGHT - player.height;
+        }
     }
     
     void updatePlayer(float elapsedTime)
     {
-        // set velocity to zero if there is no movement
-        player.velocity_x = 0;
-        player.velocity_y = 0;
         
+        // Input event handler
         if(IsFocused())
         {
-            if(GetKey(olc::Key::UP).bHeld)
-            {
-                player.velocity_y = -50.0f;
-            }
-            if(GetKey(olc::Key::DOWN).bHeld)
-            {
-                player.velocity_y = 50.0f;
-            }
             if(GetKey(olc::Key::LEFT).bHeld)
             {
-                player.velocity_x = -50.0f;
+                player.velocity_x = -22.0f;
             }
-            if(GetKey(olc::Key::RIGHT).bHeld)
+            else if(GetKey(olc::Key::RIGHT).bHeld)
             {
-                player.velocity_x = 50.0f;
+                player.velocity_x = 22.0f;
             }
+            else{
+                // set velocity to zero if there is no movement
+                player.velocity_x = 0;
+            }
+            
             if(GetKey(olc::Key::SPACE).bPressed)
             {
                 // jump
-               if(player.velocity_y == 0)
-               {
-                    std::cout<<"hello"<<std::endl;
-                    player.velocity_y -= 17.0f * 100;
-               }
+                player.velocity_y = -500.0f;
             }
-            
-        }
 
+        }
+        
         // Add gravity and friction
         player.velocity_y += gravity;
         
-//        player.velocity_x *= friction;
-//        player.velocity_y *= friction;
-
         // update player position based on change in velocity
         player.x += player.velocity_x * elapsedTime;
         player.y += player.velocity_y * elapsedTime;
         
         boundaryCollisionDetection();
         
-        FillRect(player.x, player.y, player.width, player.height, olc::GREEN);
+        if(!(frame_count_idle % 5) && !(GetKey(olc::Key::RIGHT).bHeld) && !(GetKey(olc::Key::LEFT).bHeld) )
+        {
+            if ( frame > 0 && frame < 10)
+            {
+                personIdlePng[0] = char(int(frame/10) + 48);
+                personIdlePng[1] = char(frame + 48);
+            }
+            else if(frame >= 10 && frame < 20){
+                personIdlePng[0] = char(int(frame/10) + 48);
+                personIdlePng[1] = char(int(frame-10) + 48);
+            }
+            else{
+                personIdlePng[0] = char(int(frame/10) + 48);
+                personIdlePng[1] = char(int(frame-20) + 48);
+            }
+            
+            person = new olc::Sprite(personIdlePng);
+            person_dec = new olc::Decal(person);
+            
+            frame = (++frame) % 26;
+            if(frame == 0)
+                frame = 1;
+            //std::cout<<personPng<<std::endl;
+        }
+        
+        frame_count_idle++;
+        DrawDecal(olc::vf2d{player.x, player.y}, person_dec, olc::vf2d{player.width, player.height});
+        //FillRect(player.x, player.y, player.width, player.height, olc::GREEN);
     }
     
 };
@@ -122,7 +154,7 @@ public:
 
 int main(int argc, char const *argv[]) {
     EscapeRoom demo;
-    if (demo.Construct(LEVEL_WIDTH, LEVEL_HEIGHT, 8, 8))
+    if (demo.Construct(LEVEL_WIDTH, LEVEL_HEIGHT, 1, 1))
         demo.Start();
 
     return 0;
