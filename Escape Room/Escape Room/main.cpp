@@ -36,7 +36,7 @@ public:
         "................"
         "................"
         "................"
-        "................"
+        "...B........B..."
         "################";
     
     olc::vi2d vLevelSize = { 16, 8 };
@@ -58,8 +58,12 @@ public:
     olc::Sprite* person = nullptr;
     olc::Decal* person_dec = nullptr;
     
+    olc::Sprite* bucket = nullptr;
+    olc::Decal* bucket_dec = nullptr;
+    
     olc::Renderable sky;
-    olc::Renderable wall2;
+    olc::Renderable ground;
+    olc::Renderable background;
     
     uint8_t frame = 0;
     uint8_t frame_count = 0;
@@ -71,10 +75,14 @@ public:
     bool OnUserCreate() override
     {
         sky.Load("background.png");
-        wall2.Load("Ground.png");
+        ground.Load("Ground.png");
+        background.Load("Background1.png");
         
         person = new olc::Sprite(personIdlePng);
         person_dec = new olc::Decal(person);
+        
+        bucket = new olc::Sprite("Bucket.png");
+        bucket_dec = new olc::Decal(bucket);
         
         return true;
     }
@@ -96,7 +104,7 @@ public:
         };
         
         Clear(olc::BLACK);
-        updatePlayer(fElapsedTime);
+        DrawBackground();
         
         
         //Draw Tiles
@@ -107,18 +115,21 @@ public:
                 char sTileType = GetTile(x, y);
                 switch(sTileType)
                 {
-                    case '.':
-                        DrawSprite(olc::vi2d({x, y}) * vTileSize, sky.Sprite());
+                    case 'B':
+                        DrawDecal(olc::vf2d{(float)x, (float)y} * vTileSize, bucket_dec, olc::vf2d{1, 1});
                         break;
                     case '#':
-                        DrawSprite(olc::vi2d({x, y}) * vTileSize, wall2.Sprite());
+                        DrawSprite(olc::vi2d({x, y}) * vTileSize, ground.Sprite());
                         break;
                     default:
-                        DrawSprite(olc::vi2d({x, y}) * vTileSize, wall2.Sprite());
+                        //DrawSprite(olc::vi2d({x, y}) * vTileSize, ground.Sprite());
                         break;
                 }
             }
         }
+        
+        updatePlayer(fElapsedTime);
+        
         return true;
     }
     
@@ -244,6 +255,10 @@ public:
         
         frame_count_idle++;
         DrawDecal(olc::vf2d{player.x, player.y}, person_dec, olc::vf2d{2, 2});
+    }
+    
+    void DrawBackground(){
+        DrawSprite(0, 0, background.Sprite());
     }
     
 };
