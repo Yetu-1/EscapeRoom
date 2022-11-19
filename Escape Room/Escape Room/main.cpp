@@ -7,14 +7,14 @@
 #define PIECE_HEIGHT 60
 
 #define LEVEL_HEIGHT 848
-#define LEVEL_WIDTH 1280
+#define LEVEL_WIDTH 1580
 
 struct PLAYER
 {
     float x = 0.0f;
     float y = 0.0f;
-    float width = 2;
-    float height = 2;
+    float width = 116;
+    float height = 116;
     
     float velocity_x = 0.0f;
     float velocity_y = 0.0f;
@@ -30,7 +30,7 @@ public:
 
 public:
     
-    float gravity = 1.0f;
+    float gravity = 2.0f;
     float friction = 0.9;
     
     int levelHeight = LEVEL_HEIGHT;
@@ -53,7 +53,7 @@ public:
     
     bool OnUserCreate() override
     {
-        person = new olc::Sprite(personPng);
+        person = new olc::Sprite(personIdlePng);
         person_dec = new olc::Decal(person);
         return true;
     }
@@ -74,8 +74,10 @@ public:
             player.x = LEVEL_WIDTH - player.width;
         
         // y axis boundary collision
-        if(player.y < 0)
+        if(player.y < 0){
+            player.velocity_y = 0;
             player.y = 0;
+        }
         else if ( player.y + player.height > LEVEL_HEIGHT)
         {
             player.velocity_y = 0;
@@ -91,11 +93,50 @@ public:
         {
             if(GetKey(olc::Key::LEFT).bHeld)
             {
-                player.velocity_x = -22.0f;
+                // Update character velocity
+                player.velocity_x = -60.0f;
+                
+                // Update character frame
+                if ( frame > 0 && frame < 10)
+                {
+                    personPng[0] = char(int(frame/10) + 48);
+                    personPng[1] = char(frame + 48);
+                }
+                else{
+                    personPng[0] = char(int(frame/10) + 48);
+                    personPng[1] = char(int(frame-10) + 48);
+                }
+                person = new olc::Sprite(personPng);
+                person_dec = new olc::Decal(person);
+                if(!(frame_count % 20))
+                    frame = (++frame) % 14;
+                if(frame == 0)
+                    frame = 1;
+                frame_count++;
             }
             else if(GetKey(olc::Key::RIGHT).bHeld)
             {
-                player.velocity_x = 22.0f;
+                // Update player velocity
+                player.velocity_x = 60.0f;
+                
+                // Update character frame
+                if ( frame > 0 && frame < 10)
+                {
+                    personPng[0] = char(int(frame/10) + 48);
+                    personPng[1] = char(frame + 48);
+                }
+                else{
+                    personPng[0] = char(int(frame/10) + 48);
+                    personPng[1] = char(int(frame-10) + 48);
+                }
+                person = new olc::Sprite(personPng);
+                person_dec = new olc::Decal(person);
+
+                if(!(frame_count % 20))
+                    frame = (++frame) % 14;
+                if(frame == 0)
+                    frame = 1;
+                frame_count++;
             }
             else{
                 // set velocity to zero if there is no movement
@@ -105,7 +146,7 @@ public:
             if(GetKey(olc::Key::SPACE).bPressed)
             {
                 // jump
-                player.velocity_y = -500.0f;
+                player.velocity_y = -300.0f;
             }
 
         }
@@ -119,7 +160,7 @@ public:
         
         boundaryCollisionDetection();
         
-        if(!(frame_count_idle % 5) && !(GetKey(olc::Key::RIGHT).bHeld) && !(GetKey(olc::Key::LEFT).bHeld) )
+        if(!(frame_count_idle % 40) && !(GetKey(olc::Key::RIGHT).bHeld) && !(GetKey(olc::Key::LEFT).bHeld) )
         {
             if ( frame > 0 && frame < 10)
             {
@@ -145,7 +186,7 @@ public:
         }
         
         frame_count_idle++;
-        DrawDecal(olc::vf2d{player.x, player.y}, person_dec, olc::vf2d{player.width, player.height});
+        DrawDecal(olc::vf2d{player.x, player.y}, person_dec, olc::vf2d{2, 2});
         //FillRect(player.x, player.y, player.width, player.height, olc::GREEN);
     }
     
